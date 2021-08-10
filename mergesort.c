@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// TODO: free memory!
+#include <stdbool.h>
 
 int main(int argc, char **argv);
-int *mergesort(int arr[], int n);
+bool mergesort(int arr[], int n, int **out);
 void merge(int l[], int r[], int nl, int nr, int *newarr);
 void print_arr(int arr[], int n);
 
@@ -29,8 +28,12 @@ main(int argc, char **argv)
 	}
 	int len = i;
 	printf("pre-sort: "); print_arr(arr, len);
-	int *newarr = mergesort(arr, len);
+	int *newarr;
+	mergesort(arr, len, &newarr);
 	printf("post-sort: "); print_arr(newarr, len);
+	if (newarr != arr)
+		free(newarr);
+	free(arr);
 }
 
 void
@@ -41,9 +44,9 @@ print_arr(int arr[], int n)
 		printf("%d, ", arr[i]);
 	printf("}\n");
 }
-// end (exclusive)
-int *
-mergesort(int arr[], int n)
+// Returns whether it malloc'ed a new array or returned the input unchanged.
+bool
+mergesort(int arr[], int n, int **out)
 {
 	printf("n=%d\tarr=", n); print_arr(arr, n);
 	if (n > 1) {
@@ -52,14 +55,20 @@ mergesort(int arr[], int n)
 		printf("pivot=%d\n", pivot);
 		printf("l="); print_arr(arr, pivot);
 		printf("r="); print_arr(arr+pivot, n - pivot);
-		int *l = mergesort(arr, pivot);
-		int *r = mergesort(arr+pivot, n - pivot);
+
+		int *l, *r;
+		bool free_l = mergesort(arr, pivot, &l);
+		bool free_r = mergesort(arr+pivot, n - pivot, &r);
 		merge(l, r, pivot, n - pivot, newarr);
+		if (free_l) free(l);
+		if (free_r) free(r);
 		printf("newarr="); print_arr(newarr, n);
 		fputc('\n', stdout);
-		return newarr;
+		*out = newarr;
+		return true;
 	} else {
-		return arr;
+		*out = arr;
+		return false;
 	}
 }
 
